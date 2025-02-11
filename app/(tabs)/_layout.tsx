@@ -8,7 +8,7 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Provider } from 'react-redux';
-import { store } from '@/store/store';
+import { store } from '../../store/store';
 import { FontAwesome6 } from '@expo/vector-icons';
 
 export default function TabLayout() {

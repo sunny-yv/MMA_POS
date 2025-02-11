@@ -70,11 +70,11 @@ const IndexScreen = () => {
     setShowInvoicePrompt(true);
   };
 
-  const handleGeneratePDF = () => {
-    Alert.alert('Thành công', 'Hóa đơn đã được xuất và chia sẻ thành công!');
-    setShowInvoicePrompt(false);
-    navigation.navigate('Statistics', { transaction: cart });
-  };
+  // const handleGeneratePDF = () => {
+  //   Alert.alert('Thành công', 'Hóa đơn đã được xuất và chia sẻ thành công!');
+  //   setShowInvoicePrompt(false);
+  //   navigation.navigate('StatisticsScreen', { transaction: cart });
+  // };
 
   const handleAddProduct = () => {
     if (newProductName && newProductPrice) {
@@ -162,7 +162,7 @@ const IndexScreen = () => {
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>Bạn có muốn xuất hóa đơn PDF không?</Text>
             <View style={styles.modalButtons}>
-              <Button title="Có" onPress={handleGeneratePDF} />
+              {/* <Button title="Có" onPress={handleGeneratePDF} /> */}
               <Button title="Không" onPress={() => setShowInvoicePrompt(false)} />
             </View>
           </View>

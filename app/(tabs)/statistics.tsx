@@ -30,7 +30,7 @@ const StatisticsScreen: React.FC<{ route: RouteProp<RootStackParamList, 'Statist
     <View style={styles.container}>
       <Text style={styles.title}>Thống kê Hóa Đơn</Text>
 
-      <BarChart
+      {/* <BarChart
         data={chartData}
         width={300}
         height={200}
@@ -44,7 +44,7 @@ const StatisticsScreen: React.FC<{ route: RouteProp<RootStackParamList, 'Statist
           labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
         }}
         style={styles.chart}
-      />
+      /> */}
 
       <FlatList
         data={transaction.items}
@@ -75,10 +75,10 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
   },
-  chart: {
-    marginVertical: 20,
-    borderRadius: 10,
-  },
+  // chart: {
+  //   marginVertical: 20,
+  //   borderRadius: 10,
+  // },
   transactionCard: {
     padding: 15,
     backgroundColor: '#f5f5f5',
