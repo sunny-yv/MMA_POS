@@ -346,12 +346,17 @@ const styles = StyleSheet.create({
   paymentMethodPicker: {
     width: '100%',
     marginBottom: 15,
+    backgroundColor: '#fff', 
+    borderRadius: 8,        
+    borderColor: '#ccc',     
+    borderWidth: 1,          
   },
   amountInput: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ccc',    
     borderRadius: 8,
     padding: 10,
+    backgroundColor: '#fff', 
     marginBottom: 10,
   },
   changeText: {
