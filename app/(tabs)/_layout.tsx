@@ -8,7 +8,7 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Provider } from 'react-redux';
-import { store } from '../../store/store';
+import { store } from '@/store/store';
 import { FontAwesome6 } from '@expo/vector-icons';
 
 export default function TabLayout() {
@@ -24,7 +24,7 @@ export default function TabLayout() {
           tabBarBackground: TabBarBackground,
           tabBarStyle: Platform.select({
             ios: {
-             
+              // Use a transparent background on iOS to show the blur effect
               position: 'absolute',
             },
             default: {},
@@ -34,7 +34,7 @@ export default function TabLayout() {
           name="index"
           options={{
             title: 'Order',
-            tabBarIcon: ({ color }) => <FontAwesome6 name="list-check" size={24} color="black" />, // Order icon
+            tabBarIcon: ({ color }) => <FontAwesome6 name="list-check" size={24} color="black" />, 
           }}
         />
         <Tabs.Screen

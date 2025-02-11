@@ -1,284 +1,391 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TextInput, Button, Alert, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, Alert, Image, StyleSheet, Dimensions } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store/store';
+import { addProduct, clearProducts, deleteProduct, setAmountPaid, setChangeAmount, setPaymentMethod, updateProduct } from '@/store/productsSlice';
 import { Picker } from '@react-native-picker/picker';
 import QRCode from 'react-native-qrcode-svg';
-import { fetchProducts, Product } from '../../services/fakeApi';
-import ProductCard from '../../components/ProductCard';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../store/types';
+import { addTransaction } from '@/store/transactionSlice';
+import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
+import { fetchProducts, saveOrder, Product } from '../../services/fakeApi';
+import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-const IndexScreen = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<Product[]>([]);
-  const [cashAmount, setCashAmount] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'qr'>('cash');
-  const [changeAmount, setChangeAmount] = useState<number>(0);
-  const [showInvoicePrompt, setShowInvoicePrompt] = useState<boolean>(false);
-  const [qrCodeValue, setQrCodeValue] = useState<string>('');
-  const [newProductName, setNewProductName] = useState<string>('');
-  const [newProductPrice, setNewProductPrice] = useState<string>('');
-  const [isAddingProduct, setIsAddingProduct] = useState<boolean>(false);
+const CashierScreen = () => {
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+  const products = useSelector((state: RootState) => state.products.products);
+  const paymentMethod = useSelector((state: RootState) => state.products.paymentMethod);
+  const amountPaid = useSelector((state: RootState) => state.products.amountPaid);
+  const changeAmount = useSelector((state: RootState) => state.products.changeAmount);
 
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
+  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [productQuantity, setProductQuantity] = useState('');
+  const [isInvoiceGenerated, setIsInvoiceGenerated] = useState(false);
 
+  const totalAmount = products.reduce((total, product) => total + product.price * product.quantity, 0);
+
+  // Load products from API
   useEffect(() => {
     const loadProducts = async () => {
-      const fetchedProducts = await fetchProducts();
-      setProducts(fetchedProducts);
+      const productsFromAPI = await fetchProducts();
+      setAvailableProducts(productsFromAPI);
     };
     loadProducts();
   }, []);
 
-  const addToCart = (product: Product) => {
-    const existingItem = cart.find((item) => item.id === product.id);
-    if (existingItem) {
-      setCart(cart.map((item) =>
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-      ));
+  const cancelOrder = () => {
+    if (isInvoiceGenerated) {
+      dispatch(clearProducts()); 
     } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
+      Alert.alert('Thông báo', 'Bạn chưa xuất hóa đơn, vẫn muốn hủy đơn?', [
+        { text: 'Không', style: 'cancel' },
+        { text: 'Có', onPress: () => dispatch(clearProducts()) },
+      ]);
     }
   };
 
-  const updateQuantity = (productId: number, quantity: number) => {
-    if (quantity > 0) {
-      setCart(cart.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
-      ));
-    } else {
-      setCart(cart.filter((item) => item.id !== productId));
+  const addProductHandler = () => {
+    if (selectedProduct && productQuantity) {
+      const existingProduct = products.find(product => product.name === selectedProduct.name);
+      if (existingProduct) {
+        dispatch(updateProduct({ ...existingProduct, quantity: existingProduct.quantity + parseInt(productQuantity) }));
+      } else {
+        const newProduct = {
+          id: Date.now(),
+          name: selectedProduct.name,
+          price: selectedProduct.price,
+          imgUrl: selectedProduct.imgUrl,
+          quantity: parseInt(productQuantity),
+        };
+        dispatch(addProduct(newProduct));
+      }
+      setProductQuantity('');
     }
   };
 
-  const handlePayment = async () => {
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    if (paymentMethod === 'cash' && parseFloat(cashAmount) < total) {
-      Alert.alert('Lỗi', 'Số tiền khách đưa không đủ');
-      return;
-    }
-
-    const change = parseFloat(cashAmount) - total;
-    setChangeAmount(change > 0 ? change : 0);
-
-    const transaction = {
-      totalAmount: total,
-      items: cart,
-      status: 'completed',
-    };
-
-    setShowInvoicePrompt(true);
+  const handleAmountPaidChange = (value: string) => {
+    dispatch(setAmountPaid(value));
   };
 
-  // const handleGeneratePDF = () => {
-  //   Alert.alert('Thành công', 'Hóa đơn đã được xuất và chia sẻ thành công!');
-  //   setShowInvoicePrompt(false);
-  //   navigation.navigate('StatisticsScreen', { transaction: cart });
-  // };
+  useEffect(() => {
+    if (amountPaid && totalAmount) {
+      const change = parseFloat(amountPaid) - totalAmount;
+      dispatch(setChangeAmount(change.toFixed(2)));
+    }
+  }, [amountPaid, totalAmount, dispatch]);
 
-  const handleAddProduct = () => {
-    if (newProductName && newProductPrice) {
-      const newProduct: Product = {
-        id: products.length + 1,
-        name: newProductName,
-        price: parseFloat(newProductPrice),
-        image: 'https://via.placeholder.com/60',
-        quantity: 0,
+  const handlePayment = () => {
+    if (paymentMethod === 'cash' && amountPaid) {
+      const change = parseFloat(amountPaid) - totalAmount;
+      if (change >= 0) {
+        dispatch(setChangeAmount(change.toFixed(2)));
+        const transaction = {
+          id: Date.now().toString(),
+          date: new Date().toISOString(),
+          totalAmount: totalAmount.toFixed(2),
+          paymentMethod,
+        };
+        dispatch(addTransaction(transaction));
+        Alert.alert('Thông báo', 'Thanh toán thành công!', [
+          { text: 'Có', onPress: generatePDF },
+          { text: 'Không', onPress: async () => { await saveOrder({ id: Date.now(), cart: products.map(product => ({ id: product.id, name: product.name, price: product.price })), totalAmount }); dispatch(clearProducts()); }},
+        ]);
+      } else {
+        Alert.alert('Thông báo', 'Số tiền trả không đủ');
+      }
+    } else if (paymentMethod === 'qr') {
+      const transaction = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        totalAmount: totalAmount.toFixed(2),
+        paymentMethod,
       };
-      setProducts([...products, newProduct]);
-      setIsAddingProduct(false);
-      setNewProductName('');
-      setNewProductPrice('');
+      dispatch(addTransaction(transaction));
+      Alert.alert('Thông báo', 'Thanh toán qua QR thành công!', [
+        { text: 'Có', onPress: generatePDF },
+        { text: 'Không', onPress: async () => { await saveOrder({ id: Date.now(), cart: products.map(product => ({ id: product.id, name: product.name, price: product.price })), totalAmount }); dispatch(clearProducts()); }},
+      ]);
+    } else {
+      Alert.alert('Thông báo', 'Vui lòng chọn phương thức thanh toán và nhập số tiền');
     }
   };
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const generatePDF = async () => {
+    try {
+      const currentDate = new Date();
+      const formattedDate = `${currentDate.toLocaleDateString()} ${currentDate.toLocaleTimeString()}`;
+
+      const htmlContent = `
+        <h1 style="text-align:center;">Hóa Đơn Thanh Toán</h1>
+        <p style="text-align:right;">Ngày: ${formattedDate}</p>
+        <table border="1" style="width:100%; text-align:center;">
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Số lượng</th>
+            <th>Giá</th>
+            <th>Thành tiền</th>
+          </tr>
+          ${products.map(item => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.price} VND</td>
+              <td>${item.price * item.quantity} VND</td>
+            </tr>
+          `).join('')}
+        </table>
+        <h3 style="text-align:right;">Tổng cộng: ${totalAmount} VND</h3>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html: htmlContent });
+
+      if (uri) {
+        Alert.alert('Hóa đơn đã được tạo', 'Bạn có muốn chia sẻ?', [
+          { text: 'Đóng' },
+          { text: 'Chia sẻ', onPress: () => Sharing.shareAsync(uri) },
+        ]);
+        dispatch(clearProducts());
+      } else {
+        Alert.alert('Lỗi', 'Không thể tạo file PDF.');
+      }
+    } catch (error) {
+      console.error('Lỗi tạo PDF:', error);
+      Alert.alert('Lỗi', 'Đã xảy ra lỗi khi tạo PDF.');
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Menu</Text>
-
-      <TouchableOpacity style={styles.addProductButton} onPress={() => setIsAddingProduct(true)}>
-        <Text style={styles.addProductButtonText}>Thêm sản phẩm mới</Text>
-      </TouchableOpacity>
-
-      <FlatList
-        data={products}
-        renderItem={({ item }) => (
-          <ProductCard product={item} onAddToCart={addToCart} />
-        )}
-        keyExtractor={(item) => item.id.toString()}
-      />
-
-      <View style={styles.cartContainer}>
-        <Text style={styles.cartTitle}>Giỏ hàng</Text>
-        {cart.map((item) => (
-          <View key={item.id} style={styles.cartItem}>
-            <Text style={styles.cartItemText}>{item.name} x {item.quantity}</Text>
-            <Text style={styles.cartItemText}>${item.price * item.quantity}</Text>
-            <View style={styles.quantityControl}>
-              <Button title="-" onPress={() => updateQuantity(item.id, item.quantity - 1)} />
-              <Text>{item.quantity}</Text>
-              <Button title="+" onPress={() => updateQuantity(item.id, item.quantity + 1)} />
-            </View>
-          </View>
-        ))}
-        <Text style={styles.totalText}>Tổng tiền: ${total}</Text>
-
-        <Text>Chọn phương thức thanh toán:</Text>
-        <Picker
-          selectedValue={paymentMethod}
-          onValueChange={(itemValue: 'cash' | 'qr') => {
-            setPaymentMethod(itemValue);
-            if (itemValue === 'qr') {
-              setQrCodeValue(total.toString());
-            }
-          }}
-        >
-          <Picker.Item label="Tiền mặt" value="cash" />
-          <Picker.Item label="QR" value="qr" />
-        </Picker>
-
-        {paymentMethod === 'cash' && (
-          <TextInput
-            style={styles.input}
-            placeholder="Nhập số tiền khách đưa"
-            keyboardType="numeric"
-            value={cashAmount}
-            onChangeText={setCashAmount}
+    <FlatList
+      ListHeaderComponent={
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerText}>Tạo Đơn Hàng</Text>
+          <FlatList
+            data={availableProducts}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={2}
+            columnWrapperStyle={styles.columnWrapper}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedProduct(item);
+                  setProductQuantity('1');
+                }}
+                style={styles.productCard}
+              >
+                <Image source={{ uri: item.image }} style={styles.productImage} />
+                <Text style={styles.productTitle}>{item.name}</Text>
+                <Text style={styles.productPrice}>{item.price} VND</Text>
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => {
+                    setSelectedProduct(item);
+                    setProductQuantity('1');
+                    addProductHandler();
+                  }}
+                >
+                  <Text style={styles.addButtonText}>Thêm vào đơn</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            )}
           />
-        )}
-
-        {paymentMethod === 'qr' && qrCodeValue && (
-          <QRCode value={qrCodeValue} size={200} />
-        )}
-
-        <Text>Tiền thừa: ${changeAmount.toFixed(2)}</Text>
-        <Button title="Hoàn thành đơn" onPress={handlePayment} />
-      </View>
-
-      <Modal visible={showInvoicePrompt} transparent={true}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalText}>Bạn có muốn xuất hóa đơn PDF không?</Text>
-            <View style={styles.modalButtons}>
-              {/* <Button title="Có" onPress={handleGeneratePDF} /> */}
-              <Button title="Không" onPress={() => setShowInvoicePrompt(false)} />
+        </View>
+      }
+      data={products}
+      keyExtractor={(item) => item.id.toString()}
+      renderItem={({ item }) => (
+        <View style={styles.cartItem}>
+          <View style={styles.cartItemContent}>
+            <Image source={{ uri: item.imgUrl }} style={styles.cartItemImage} />
+            <View style={styles.cartItemDetails}>
+              <Text style={styles.cartItemTitle}>{item.name}</Text>
+              <Text style={styles.cartItemText}>Số lượng: {item.quantity}</Text>
+              <Text style={styles.cartItemText}>{item.price} VND</Text>
+              <TouchableOpacity onPress={() => dispatch(deleteProduct(item.id))} style={styles.deleteButton}>
+                <FontAwesome name="trash-o" size={24} color="red" />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
-      </Modal>
-
-      <Modal visible={isAddingProduct} transparent={true}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalText}>Thêm sản phẩm mới</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Tên sản phẩm"
-              value={newProductName}
-              onChangeText={setNewProductName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Giá sản phẩm"
-              keyboardType="numeric"
-              value={newProductPrice}
-              onChangeText={setNewProductPrice}
-            />
-            <View style={styles.modalButtons}>
-              <Button title="Thêm" onPress={handleAddProduct} />
-              <Button title="Hủy" onPress={() => setIsAddingProduct(false)} />
+      )}
+      ListFooterComponent={
+        <View style={styles.footerContainer}>
+          <Text style={styles.totalText}>Tổng số tiền cần trả:</Text>
+          <Text style={styles.totalAmount}>{totalAmount} VND</Text>
+          <Picker
+            selectedValue={paymentMethod}
+            onValueChange={(itemValue) => dispatch(setPaymentMethod(itemValue))}
+            style={styles.paymentMethodPicker}
+          >
+            <Picker.Item label="Tiền mặt" value="cash" />
+            <Picker.Item label="QR" value="qr" />
+          </Picker>
+          <TextInput
+            placeholder="Nhập số tiền khách trả"
+            value={paymentMethod === 'cash' ? amountPaid : ''}
+            onChangeText={handleAmountPaidChange}
+            keyboardType="numeric"
+            editable={paymentMethod === 'cash'}
+            style={styles.amountInput}
+          />
+          <Text style={styles.changeText}>Tiền thối lại: {paymentMethod === 'cash' ? changeAmount : 'Không áp dụng'}</Text>
+          <TouchableOpacity onPress={cancelOrder} style={styles.cancelButton} disabled={products.length === 0}>
+            <Text style={styles.cancelButtonText}>Hủy đơn hàng</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handlePayment} style={styles.paymentButton} disabled={products.length === 0}>
+            <Text style={styles.paymentButtonText}>Thanh toán</Text>
+          </TouchableOpacity>
+          {paymentMethod === 'qr' && (
+            <View style={styles.qrContainer}>
+              <QRCode value={`Total Amount: ${totalAmount} VND`} size={200} />
             </View>
-          </View>
+          )}
         </View>
-      </Modal>
-    </View>
+      }
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  headerContainer: {
     padding: 20,
+    backgroundColor: '#f5f5f5',
+    marginBottom: 20,
   },
-  title: {
+  headerText: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  addProductButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  addProductButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cartContainer: {
-    marginTop: 20,
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  cartTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  cartItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  cartItemText: {
-    fontSize: 16,
-  },
-  totalText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  quantityControl: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginVertical: 10,
-    paddingHorizontal: 8,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-  },
-  modalText: {
-    fontSize: 18,
-    marginBottom: 20,
     textAlign: 'center',
   },
-  modalButtons: {
+  columnWrapper: {
+    justifyContent: 'space-between',
+  },
+  productCard: {
+    width: Dimensions.get('window').width / 2 - 30,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    elevation: 5,
+    marginBottom: 20,
+  },
+  productImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  productTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginVertical: 5,
+  },
+  productPrice: {
+    fontSize: 14,
+    color: '#888',
+  },
+  addButton: {
+    backgroundColor: '#4caf50',
+    paddingVertical: 10,
+    borderRadius: 25,
+    marginTop: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cartItem: {
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+  cartItemContent: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 10,
+    elevation: 3,
+  },
+  cartItemImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  cartItemDetails: {
+    flex: 1,
+  },
+  cartItemTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cartItemText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+  },
+  footerContainer: {
+    padding: 20,
+  },
+  totalText: {
+    fontSize: 16,
+  },
+  totalAmount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 10,
+  },
+  paymentMethodPicker: {
+    width: '100%',
+    marginBottom: 15,
+  },
+  amountInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  changeText: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  cancelButton: {
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  paymentButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  paymentButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  qrContainer: {
+    marginVertical: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
-export default IndexScreen;
+export default CashierScreen;

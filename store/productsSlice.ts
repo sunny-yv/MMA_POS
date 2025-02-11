@@ -1,28 +1,69 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-const initialState = [
-  { id: 1, name: 'Berry Cake', price: 12, image: 'https://via.placeholder.com/60', quantity: 0 },
-  { id: 2, name: 'Apple', price: 8, image: 'https://via.placeholder.com/60', quantity: 0 },
-  { id: 3, name: 'Black Tea', price: 12, image: 'https://via.placeholder.com/60', quantity: 0 },
-];
+interface Product {
+    id: number;
+    name: string;
+    price: number;
+    quantity: number;
+    imgUrl: string;
+}
+
+interface ProductsState {
+    products: Product[];
+    paymentMethod: 'cash' | 'qr' | null;
+    amountPaid: string;
+    changeAmount: string;
+}
+
+const initialState: ProductsState = {
+    products: [],
+    paymentMethod: null,
+    amountPaid: '',
+    changeAmount: '',
+};
 
 const productsSlice = createSlice({
-  name: 'products',
-  initialState,
-  reducers: {
-    addToCart(state, action) {
-      const existingProduct = state.find((product) => product.id === action.payload.id);
-      if (existingProduct) {
-        existingProduct.quantity += 1;
-      } else {
-        state.push({ ...action.payload, quantity: 1 });
-      }
+    name: 'products',
+    initialState,
+    reducers: {
+        addProduct(state, action: PayloadAction<Product>) {
+            state.products.push(action.payload);
+        },
+        updateProduct(state, action: PayloadAction<Product>) {
+            const index = state.products.findIndex(product => product.id === action.payload.id);
+            if (index !== -1) {
+                state.products[index] = action.payload;
+            }
+        },
+        deleteProduct(state, action: PayloadAction<number>) {
+            state.products = state.products.filter(product => product.id !== action.payload);
+        },
+        clearProducts(state) {
+            state.products = [];
+            state.paymentMethod = null;
+            state.amountPaid = '';
+            state.changeAmount = '';
+        },
+        setPaymentMethod(state, action: PayloadAction<'cash' | 'qr' | null>) {
+            state.paymentMethod = action.payload;
+        },
+        setAmountPaid(state, action: PayloadAction<string>) {
+            state.amountPaid = action.payload;
+        },
+        setChangeAmount(state, action: PayloadAction<string>) {
+            state.changeAmount = action.payload;
+        },
     },
-    removeFromCart(state, action) {
-      return state.filter((product) => product.id !== action.payload.id);
-    },
-  },
 });
 
-export const { addToCart, removeFromCart } = productsSlice.actions;
+export const {
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    clearProducts,
+    setPaymentMethod,
+    setAmountPaid,
+    setChangeAmount,
+} = productsSlice.actions;
+
 export default productsSlice.reducer;

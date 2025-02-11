@@ -1,93 +1,128 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../../store/types';
-import { BarChart } from 'react-native-chart-kit';
+import { View, Text, FlatList, StyleSheet, Dimensions } from 'react-native';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
+import { LineChart } from 'react-native-chart-kit';
 
-const StatisticsScreen: React.FC<{ route: RouteProp<RootStackParamList, 'Statistics'> }> = ({ route }) => {
-  const { transaction } = route.params || {};
+interface Transaction {
+    id: string;
+    date: string;
+    totalAmount: string;
+    paymentMethod: 'cash' | 'qr';
+}
 
-  if (!transaction) {
+
+const getDailyStats = (transactions: Transaction[]) => {
+    const stats: { date: string; revenue: number; orders: number }[] = [];
+
+    transactions.forEach((transaction) => {
+        const date = new Date(transaction.date).toISOString().split('T')[0]; 
+
+        stats.push({
+            date,
+            revenue: parseFloat(transaction.totalAmount),
+            orders: 1, 
+        });
+    });
+
+    return stats;
+};
+
+const StatisticsScreen = () => {
+    const transactions = useSelector((state: RootState) => state.transaction.transactions);
+    const dailyStats = getDailyStats(transactions);
+
+    const chartData = {
+        labels: dailyStats.length > 0 ? dailyStats.map((stat) => stat.date) : ['Chưa có dữ liệu'],
+        datasets: [
+            {
+                data: dailyStats.length > 0 ? dailyStats.map((stat) => stat.revenue) : [0],
+                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,  
+                strokeWidth: 2,  
+            },
+        ],
+    };
+
+    
+    const renderItem = ({ item }: { item: any }) => {
+        if (item.type === 'chart') {
+            return (
+                <View style={styles.chartContainer}>
+                    {dailyStats.length > 0 ? (
+                        <LineChart
+                            data={chartData}
+                            width={Dimensions.get('window').width}
+                            height={220}
+                            chartConfig={{
+                                backgroundColor: '#1cc910',
+                                backgroundGradientFrom: '#1cc910',
+                                backgroundGradientTo: '#1cc910',
+                                decimalPlaces: 2,
+                                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                                style: { borderRadius: 16 },
+                                propsForDots: { r: '6', strokeWidth: '2', stroke: '#ffa726' },
+                            }}
+                            bezier
+                        />
+                    ) : (
+                        <Text style={{ textAlign: 'center', fontSize: 16, color: 'gray' }}>
+                            Chưa có giao dịch nào.
+                        </Text>
+                    )}
+                </View>
+            );
+        }
+
+        return (
+            <View style={styles.statItem}>
+                <Text style={styles.statText}>Ngày: {new Date(item.date).toLocaleDateString('vi-VN')}</Text>
+                <Text style={styles.statText}>Doanh thu: {item.revenue.toFixed(2)} VND</Text>
+                <Text style={styles.statText}>Số đơn: {item.orders}</Text>
+            </View>
+        );
+    };
+
+    
+    const data = [
+        { type: 'chart' },
+        ...dailyStats.map((stat) => ({ ...stat, type: 'stat' })), 
+    ];
+
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Thống kê Hóa Đơn</Text>
-        <Text style={styles.errorText}>Không có dữ liệu đơn hàng.</Text>
-      </View>
+        <FlatList
+            data={data}
+            keyExtractor={(item, index) => `${item.type}-${index}`}
+            renderItem={renderItem}
+            ListHeaderComponent={
+                <Text style={styles.header}>Thống kê doanh thu</Text>
+            }
+            contentContainerStyle={{ paddingBottom: 20 }}
+        />
     );
-  }
-
-  const chartData = {
-    labels: ['Số lượng đơn', 'Tổng tiền'],
-    datasets: [
-      {
-        data: [transaction.items.length, transaction.totalAmount],
-      },
-    ],
-  };
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Thống kê Hóa Đơn</Text>
-
-      {/* <BarChart
-        data={chartData}
-        width={300}
-        height={200}
-        yAxisLabel="$"
-        chartConfig={{
-          backgroundColor: '#4CAF50',
-          backgroundGradientFrom: '#4CAF50',
-          backgroundGradientTo: '#4CAF50',
-          decimalPlaces: 0,
-          color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-        }}
-        style={styles.chart}
-      /> */}
-
-      <FlatList
-        data={transaction.items}
-        renderItem={({ item }) => (
-          <View style={styles.transactionCard}>
-            <Text style={styles.transactionText}>{item.name} x {item.quantity}</Text>
-            <Text style={styles.transactionText}>${item.price * item.quantity}</Text>
-          </View>
-        )}
-        keyExtractor={(item) => item.id.toString()}
-      />
-    </View>
-  );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
-  },
-  // chart: {
-  //   marginVertical: 20,
-  //   borderRadius: 10,
-  // },
-  transactionCard: {
-    padding: 15,
-    backgroundColor: '#f5f5f5',
-    marginBottom: 10,
-    borderRadius: 10,
-  },
-  transactionText: {
-    fontSize: 16,
-  },
+    container: {
+        padding: 10,
+    },
+    header: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign: 'center',
+        marginTop: 40,
+    },
+    chartContainer: {
+        marginBottom: 20,
+    },
+    statItem: {
+        padding: 10,
+        borderBottomWidth: 1,
+    },
+    statText: {
+        fontSize: 16,
+    },
 });
 
 export default StatisticsScreen;
