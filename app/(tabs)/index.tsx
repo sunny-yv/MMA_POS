@@ -5,12 +5,13 @@ import { RootState } from '../../store/store';
 import { addProduct, clearProducts, deleteProduct, setAmountPaid, setChangeAmount, setPaymentMethod, updateProduct } from '@/store/productsSlice';
 import { Picker } from '@react-native-picker/picker';
 import QRCode from 'react-native-qrcode-svg';
-import { addTransaction } from '@/store/transactionSlice';
+import { addTransaction } from '../../store/transactionSlice';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { fetchProducts, saveOrder, Product } from '../../services/fakeApi';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { PaymentTransaction } from '../../store/transactionSlice';
 
 const CashierScreen = () => {
   const dispatch = useDispatch();
@@ -23,6 +24,8 @@ const CashierScreen = () => {
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [productQuantity, setProductQuantity] = useState('');
+  const [customerName, setCustomerName] = useState(''); // Thêm phần tên khách hàng
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [isInvoiceGenerated, setIsInvoiceGenerated] = useState(false);
 
   const totalAmount = products.reduce((total, product) => total + product.price * product.quantity, 0);
@@ -36,9 +39,21 @@ const CashierScreen = () => {
     loadProducts();
   }, []);
 
+  useEffect(() => {
+    if (paymentMethod === 'qr') {
+      setQrCodeUrl(generateQRCode(totalAmount));
+    }
+  }, [paymentMethod, totalAmount]);
+
+  const generateQRCode = (totalAmount: number) => {
+    // Giả sử bạn đã có URL API thanh toán qua QR
+    const paymentUrl = `https://your-payment-gateway.com/qr?amount=${totalAmount}&orderId=${Date.now()}`;
+    return paymentUrl;
+  };
+
   const cancelOrder = () => {
     if (isInvoiceGenerated) {
-      dispatch(clearProducts()); 
+      dispatch(clearProducts());
     } else {
       Alert.alert('Thông báo', 'Bạn chưa xuất hóa đơn, vẫn muốn hủy đơn?', [
         { text: 'Không', style: 'cancel' },
@@ -73,7 +88,7 @@ const CashierScreen = () => {
   useEffect(() => {
     if (amountPaid && totalAmount) {
       const change = parseFloat(amountPaid) - totalAmount;
-      dispatch(setChangeAmount(change.toFixed(2)));
+      dispatch(setChangeAmount(change.toFixed(0)));
     }
   }, [amountPaid, totalAmount, dispatch]);
 
@@ -82,31 +97,43 @@ const CashierScreen = () => {
       const change = parseFloat(amountPaid) - totalAmount;
       if (change >= 0) {
         dispatch(setChangeAmount(change.toFixed(2)));
-        const transaction = {
+        const transaction: PaymentTransaction = {
           id: Date.now().toString(),
           date: new Date().toISOString(),
           totalAmount: totalAmount.toFixed(2),
-          paymentMethod,
+          paymentMethod: 'cash',
+          orderStatus: 'Done',
+          products: products.map((product) => product.name),
+          customerName: customerName,
         };
         dispatch(addTransaction(transaction));
         Alert.alert('Thông báo', 'Thanh toán thành công!', [
           { text: 'Có', onPress: generatePDF },
-          { text: 'Không', onPress: async () => { await saveOrder({ id: Date.now(), cart: products.map(product => ({ id: product.id, name: product.name, price: product.price })), totalAmount }); dispatch(clearProducts()); }},
+          { text: 'Không', onPress: async () => { 
+            await saveOrder({ id: Date.now(), cart: products.map((product) => ({ id: product.id, name: product.name, price: product.price })), totalAmount, status: 'Done' });
+            dispatch(clearProducts()); 
+          }},
         ]);
       } else {
         Alert.alert('Thông báo', 'Số tiền trả không đủ');
       }
     } else if (paymentMethod === 'qr') {
-      const transaction = {
+      const transaction: PaymentTransaction = {
         id: Date.now().toString(),
         date: new Date().toISOString(),
         totalAmount: totalAmount.toFixed(2),
-        paymentMethod,
+        paymentMethod: 'qr',
+        orderStatus: 'Done',
+        products: products.map((product) => product.name),
+        customerName: customerName,
       };
       dispatch(addTransaction(transaction));
       Alert.alert('Thông báo', 'Thanh toán qua QR thành công!', [
         { text: 'Có', onPress: generatePDF },
-        { text: 'Không', onPress: async () => { await saveOrder({ id: Date.now(), cart: products.map(product => ({ id: product.id, name: product.name, price: product.price })), totalAmount }); dispatch(clearProducts()); }},
+        { text: 'Không', onPress: async () => { 
+          await saveOrder({ id: Date.now(), cart: products.map((product) => ({ id: product.id, name: product.name, price: product.price })), totalAmount, status: 'Done' });
+          dispatch(clearProducts()); 
+        }},
       ]);
     } else {
       Alert.alert('Thông báo', 'Vui lòng chọn phương thức thanh toán và nhập số tiền');
@@ -121,8 +148,10 @@ const CashierScreen = () => {
       const htmlContent = `
         <h1 style="text-align:center;">Hóa Đơn Thanh Toán</h1>
         <p style="text-align:right;">Ngày: ${formattedDate}</p>
+        <p><strong>Tên khách hàng:</strong> ${customerName}</p>
         <table border="1" style="width:100%; text-align:center;">
           <tr>
+            <th>Tên khách hàng</th>
             <th>Sản phẩm</th>
             <th>Số lượng</th>
             <th>Giá</th>
@@ -130,6 +159,7 @@ const CashierScreen = () => {
           </tr>
           ${products.map(item => `
             <tr>
+              <td>${customerName}</td>
               <td>${item.name}</td>
               <td>${item.quantity}</td>
               <td>${item.price} VND</td>
@@ -161,7 +191,8 @@ const CashierScreen = () => {
     <FlatList
       ListHeaderComponent={
         <View style={styles.headerContainer}>
-          <Text style={styles.headerText}>Tạo Đơn Hàng</Text>
+          <Text style={styles.headerText}>Menu</Text>
+          
           <FlatList
             data={availableProducts}
             keyExtractor={(item) => item.id.toString()}
@@ -190,6 +221,12 @@ const CashierScreen = () => {
                 </TouchableOpacity>
               </TouchableOpacity>
             )}
+          />
+          <TextInput
+            style={styles.customerNameInput}
+            placeholder="Nhập tên khách hàng"
+            value={customerName}
+            onChangeText={setCustomerName}
           />
         </View>
       }
@@ -222,12 +259,15 @@ const CashierScreen = () => {
             <Picker.Item label="Tiền mặt" value="cash" />
             <Picker.Item label="QR" value="qr" />
           </Picker>
+          {paymentMethod === 'qr' && qrCodeUrl && (
+            <QRCode value={qrCodeUrl} size={200} />
+          )}
           <TextInput
             placeholder="Nhập số tiền khách trả"
             value={paymentMethod === 'cash' ? amountPaid : ''}
             onChangeText={handleAmountPaidChange}
             keyboardType="numeric"
-            editable={paymentMethod === 'cash'}
+            editable={paymentMethod === 'cash'} 
             style={styles.amountInput}
           />
           <Text style={styles.changeText}>Tiền thối lại: {paymentMethod === 'cash' ? changeAmount : 'Không áp dụng'}</Text>
@@ -237,11 +277,6 @@ const CashierScreen = () => {
           <TouchableOpacity onPress={handlePayment} style={styles.paymentButton} disabled={products.length === 0}>
             <Text style={styles.paymentButtonText}>Thanh toán</Text>
           </TouchableOpacity>
-          {paymentMethod === 'qr' && (
-            <View style={styles.qrContainer}>
-              <QRCode value={`Total Amount: ${totalAmount} VND`} size={200} />
-            </View>
-          )}
         </View>
       }
     />
@@ -249,32 +284,46 @@ const CashierScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  customerNameInput: {
+    marginBottom: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderRadius: 8,
+    borderColor: '#ccc',
+    backgroundColor: '#fff',
+  },
   headerContainer: {
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#fffdfd',
+    marginBottom: 5,
+    marginRight : 15,
+    marginLeft: 15,
+    marginTop: 40,
   },
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
+    marginBottom : 20,
+    marginTop: 10,
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
   },
   productCard: {
-    width: Dimensions.get('window').width / 2 - 30,
-    backgroundColor: '#fff',
-    padding: 10,
+    width: Dimensions.get('window').width *0.4 ,
+    backgroundColor: '#fffafa',
+    padding: 5,
     borderRadius: 8,
     alignItems: 'center',
     elevation: 5,
-    marginBottom: 20,
+    marginBottom: 10,
+
   },
   productImage: {
-    width: 100,
+    width: 150,
     height: 100,
-    borderRadius: 8,
+    borderRadius: 4,
   },
   productTitle: {
     fontSize: 16,
@@ -283,12 +332,12 @@ const styles = StyleSheet.create({
   },
   productPrice: {
     fontSize: 14,
-    color: '#888',
+    color: '#cd9a03',
   },
   addButton: {
-    backgroundColor: '#4caf50',
+    backgroundColor: '#0424d8',
     paddingVertical: 10,
-    borderRadius: 25,
+    borderRadius: 5,
     marginTop: 10,
     width: '100%',
     alignItems: 'center',
@@ -305,7 +354,7 @@ const styles = StyleSheet.create({
   cartItemContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#cdd3d4',
     padding: 10,
     borderRadius: 10,
     elevation: 3,
@@ -313,7 +362,7 @@ const styles = StyleSheet.create({
   cartItemImage: {
     width: 50,
     height: 50,
-    borderRadius: 8,
+    borderRadius: 4,
     marginRight: 10,
   },
   cartItemDetails: {
@@ -376,7 +425,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   paymentButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#03dc1d',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',

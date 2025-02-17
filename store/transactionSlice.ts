@@ -1,29 +1,34 @@
+// transactionSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface Transaction {
-    id: string;
-    date: string;
-    totalAmount: string;
-    paymentMethod: 'cash' | 'qr';
+export interface PaymentTransaction {
+  id: string;
+  date: string;
+  totalAmount: string;
+  paymentMethod: 'cash' | 'qr';
+  orderStatus: 'Done' | 'Canceled';
+  products: string[];
+  customerName: string;  // Thêm trường customerName
 }
 
 interface TransactionState {
-    transactions: Transaction[];
+  transactions: PaymentTransaction[];
 }
 
 const initialState: TransactionState = {
-    transactions: [],
+  transactions: [],
 };
 
 const transactionSlice = createSlice({
-    name: 'transaction',
-    initialState,
-    reducers: {
-        addTransaction: (state, action: PayloadAction<Transaction>) => {
-            state.transactions.push(action.payload);
-        },
+  name: 'transaction',
+  initialState,
+  reducers: {
+    addTransaction: (state, action: PayloadAction<PaymentTransaction>) => {
+      state.transactions.push(action.payload);
     },
+  },
 });
 
 export const { addTransaction } = transactionSlice.actions;
+
 export default transactionSlice.reducer;
