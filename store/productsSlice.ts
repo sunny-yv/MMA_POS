@@ -1,3 +1,4 @@
+// store/productsSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface Product {
@@ -5,7 +6,8 @@ interface Product {
   name: string;
   price: number;
   quantity: number;
-  imgUrl: string;
+  imgUrl?: string;  // Thuộc tính này sẽ lưu ảnh
+  image?: string;   // Hoặc tuỳ theo file JSON
 }
 
 interface ProductsState {
@@ -30,13 +32,13 @@ const productsSlice = createSlice({
       state.products.push(action.payload);
     },
     updateProduct(state, action: PayloadAction<Product>) {
-      const index = state.products.findIndex(product => product.id === action.payload.id);
+      const index = state.products.findIndex((p) => p.id === action.payload.id);
       if (index !== -1) {
         state.products[index] = action.payload;
       }
     },
     deleteProduct(state, action: PayloadAction<number>) {
-      state.products = state.products.filter(product => product.id !== action.payload);
+      state.products = state.products.filter((p) => p.id !== action.payload);
     },
     clearProducts(state) {
       state.products = [];

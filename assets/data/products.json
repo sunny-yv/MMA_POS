@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "name": "Bún Bò",
+    "price": 45000,
+    "quantity": 0,
+    "image": "https://static.vinwonders.com/production/bun-bo-hue-ngon-o-sai-gon-2.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Bánh Mì",
+    "price": 38000,
+    "quantity": 0,
+    "image": "https://media-cdn-v2.laodong.vn/storage/newsportal/2024/5/31/1346983/Banh-Mi-8.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Phở",
+    "price": 50000,
+    "quantity": 0,
+    "image": "https://duonggiahotel.vn/wp-content/uploads/2023/09/quan-pho-da-nang.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Bánh cuốn",
+    "price": 35000,
+    "quantity": 0,
+    "image": "https://shop.nagakawa.com.vn/media/news/1809_cach-lam-banh-cuon-bang-chao-chong-dinh3.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Bún cua Gia Lai",
+    "price": 20000,
+    "quantity": 0,
+    "image": "https://vnn-imgs-f.vgcloud.vn/2021/05/05/10/bun-cua-thoi-1.jpeg"
+  },
+  {
+    "id": 6,
+    "name": "Mì Quảng",
+    "price": 40000,
+    "quantity": 0,
+    "image": "https://hapinut.com/wp-content/uploads/2022/03/mi-quang-quang-nam.jpg"
+  },
+  {
+    "id": 7,
+    "name": "Bánh tầm bì",
+    "price": 30000,
+    "quantity": 0,
+    "image": "https://ticotravel.com.vn/wp-content/uploads/2023/07/banh_tam_bi_can_tho_16.jpg"
+  },
+  {
+    "id": 8,
+    "name": "Cơm Tấm",
+    "price": 42000,
+    "quantity": 0,
+    "image": "https://bizweb.dktcdn.net/100/442/328/files/hi-nh-avatar-website-cnsg.jpg"
+  },
+  {
+    "id": 9,
+    "name": "Cơm Hến",
+    "price": 35000,
+    "quantity": 0,
+    "image": "https://static.vinwonders.com/production/com-hen-hoi-an-01.jpg"
+  },
+  {
+    "id": 10,
+    "name": "Hủ tiếu",
+    "price": 40000,
+    "quantity": 0,
+    "image": "https://cdn.tgdd.vn/2021/10/CookRecipe/Avatar/2(10).jpg"
+  }
+]

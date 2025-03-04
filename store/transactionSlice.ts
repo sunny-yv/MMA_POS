@@ -1,14 +1,14 @@
-// transactionSlice.ts
+// store/transactionSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface PaymentTransaction {
   id: string;
   date: string;
-  totalAmount: string;
+  totalAmount: string;     // có thể là string hay number tuỳ thích
   paymentMethod: 'cash' | 'qr';
   orderStatus: 'Done' | 'Canceled';
   products: string[];
-  customerName: string;  // Thêm trường customerName
+  customerName: string;
 }
 
 interface TransactionState {
