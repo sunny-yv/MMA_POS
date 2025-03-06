@@ -1,4 +1,4 @@
-// app/(tabs)/index.tsx
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -239,8 +239,8 @@ export default function CashierScreen() {
               <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.headerText}>Menu</Text>
-          {/* Danh sách sản phẩm */}
+          <Text style={styles.headerText}>KPOP GOODS</Text>
+          
           <FlatList
             data={availableProducts}
             keyExtractor={(item) => String(item.id)}
@@ -338,12 +338,12 @@ export default function CashierScreen() {
 
 const styles = StyleSheet.create({
   headerContainer: {
-    padding: 15,
+    padding: 10,
     backgroundColor: '#fff',
     marginBottom: 5,
     marginRight: 15,
     marginLeft: 15,
-    marginTop: 40
+    marginTop: 10
   },
   logoutContainer: {
     alignItems: 'flex-end',

@@ -6,8 +6,8 @@ interface Product {
   name: string;
   price: number;
   quantity: number;
-  imgUrl?: string;  // Thuộc tính này sẽ lưu ảnh
-  image?: string;   // Hoặc tuỳ theo file JSON
+  imgUrl?: string;
+  image?: string;
 }
 
 interface ProductsState {

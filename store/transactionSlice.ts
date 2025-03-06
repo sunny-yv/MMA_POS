@@ -4,7 +4,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export interface PaymentTransaction {
   id: string;
   date: string;
-  totalAmount: string;     // có thể là string hay number tuỳ thích
+  totalAmount: string;
   paymentMethod: 'cash' | 'qr';
   orderStatus: 'Done' | 'Canceled';
   products: string[];
