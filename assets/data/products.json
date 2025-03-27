@@ -1,72 +1,98 @@
 [
   {
     "id": 1,
-    "name": "Bún Bò",
-    "price": 45000,
+    "name": "BABYMONSTER - 1st Mini Album YG TAG MEMBER",
+    "price": 27500,
     "quantity": 0,
-    "image": "https://static.vinwonders.com/production/bun-bo-hue-ngon-o-sai-gon-2.jpg"
+    "category": "Albums",
+    "image": "https://down-vn.img.susercontent.com/file/sg-11134207-7rcch-lt0b9n0bvgsc18"
   },
   {
     "id": 2,
-    "name": "Bánh Mì",
-    "price": 38000,
+    "name": "BABYMONSTER 1st ALBUM [DRIP] TAG Member",
+    "price": 23000,
     "quantity": 0,
-    "image": "https://media-cdn-v2.laodong.vn/storage/newsportal/2024/5/31/1346983/Banh-Mi-8.jpg"
+    "category": "Albums",
+    "image": "https://m.media-amazon.com/images/I/71lNs96jpjL._AC_UF894,1000_QL80_.jpg"
   },
   {
     "id": 3,
-    "name": "Phở",
-    "price": 50000,
+    "name": "BABYMONSTER - The 1st Full Album: DRIP (ZIP LOCK)",
+    "price": 42000,
     "quantity": 0,
-    "image": "https://duonggiahotel.vn/wp-content/uploads/2023/09/quan-pho-da-nang.jpg"
+    "category": "Albums",
+    "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRy0pORhMnWH_GBHhyX7jqgsBURndPi9PwArw&s"
   },
   {
     "id": 4,
-    "name": "Bánh cuốn",
-    "price": 35000,
+    "name": "BABYMONSTER - The 1st Full Album: DRIP (BINDER)",
+    "price": 58000,
     "quantity": 0,
-    "image": "https://shop.nagakawa.com.vn/media/news/1809_cach-lam-banh-cuon-bang-chao-chong-dinh3.jpg"
+    "category": "Albums",
+    "image": "https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-m1zf5uxaeoym51"
   },
   {
     "id": 5,
-    "name": "Bún cua Gia Lai",
-    "price": 20000,
+    "name": "BABYMONSTER - The 1st Full Album: DRIP (BANDANA)",
+    "price": 56000,
     "quantity": 0,
-    "image": "https://vnn-imgs-f.vgcloud.vn/2021/05/05/10/bun-cua-thoi-1.jpeg"
+    "category": "Albums",
+    "image": "https://down-vn.img.susercontent.com/file/sg-11134207-7reor-m1rwupvaxf3207"
   },
   {
     "id": 6,
-    "name": "Mì Quảng",
-    "price": 40000,
+    "name": "BABYMONSTER - The 1st Full Album: DRIP (JEWEL CASE)",
+    "price": 42000,
     "quantity": 0,
-    "image": "https://hapinut.com/wp-content/uploads/2022/03/mi-quang-quang-nam.jpg"
+    "category": "Albums",
+    "image": "https://kpopmart.com/wp-content/uploads/2024/10/babymonster_vol1_jewel2.jpg"
   },
   {
     "id": 7,
-    "name": "Bánh tầm bì",
-    "price": 30000,
+    "name": "BABYMONSTER Random Trading Card Sheesh",
+    "price": 12000,
     "quantity": 0,
-    "image": "https://ticotravel.com.vn/wp-content/uploads/2023/07/banh_tam_bi_can_tho_16.jpg"
+    "category": "Cards",
+    "image": "https://ae01.alicdn.com/kf/S2f010550ae504e83a5fb20a20c363c5aT.jpg"
   },
   {
     "id": 8,
-    "name": "Cơm Tấm",
-    "price": 42000,
+    "name": "BABYMONSTER Random Trading Card Hello Monster",
+    "price": 12000,
     "quantity": 0,
-    "image": "https://bizweb.dktcdn.net/100/442/328/files/hi-nh-avatar-website-cnsg.jpg"
+    "category": "Cards",
+    "image": "https://down-vn.img.susercontent.com/file/vn-11134207-7ra0g-m6qitr23mdev1e"
   },
   {
     "id": 9,
-    "name": "Cơm Hến",
-    "price": 35000,
+    "name": "BABYMONSTER BAEMON Trading Card JAPAN",
+    "price": 25000,
     "quantity": 0,
-    "image": "https://static.vinwonders.com/production/com-hen-hoi-an-01.jpg"
+    "category": "Cards",
+    "image": "https://i.ebayimg.com/images/g/pBEAAOSw9vBnAYYv/s-l400.png"
   },
   {
     "id": 10,
-    "name": "Hủ tiếu",
-    "price": 40000,
+    "name": "BABYMONSTER Random Trading Card Drip",
+    "price": 12000,
     "quantity": 0,
-    "image": "https://cdn.tgdd.vn/2021/10/CookRecipe/Avatar/2(10).jpg"
+    "category": "Cards",
+    "image": "https://down-id.img.susercontent.com/file/id-11134207-7rash-m4p69acqto54f0"
+  },
+  {
+    "id": 11,
+    "name": "BABYMONSTER Official Lightstick",
+    "price": 120000,
+    "quantity": 0,
+    "category": "Accessories",
+    "image": "https://baro7.com/cdn/shop/files/babymonster-official-light-stick-best-kpop-store-848780.jpg?v=1731051149"
+  },
+  {
+    "id": 12,
+    "name": "BABYMONSTER Collect Book",
+    "price": 12000,
+    "quantity": 0,
+    "category": "Accessories",
+    "image": "https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lx22eeqgb4d5f4"
   }
 ]
